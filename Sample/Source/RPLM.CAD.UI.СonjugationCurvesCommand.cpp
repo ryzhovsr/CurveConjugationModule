@@ -16,16 +16,15 @@
 #include <qwidget.h>
 #include <string>
 
-#define RSCADUIW(key)				::RPLM::Base::Framework::GetModuleResource(L##key, L"RPLM.CAD.Sample")
+#define RSCADUIW(key)	RPLM::Base::Framework::GetModuleResource(L##key, L"RPLM.CAD.Sample")
 
 namespace RPLM::CAD
 {
 	namespace UI
 	{
 		RPLMCADСonjugationCurvesCommand::RPLMCADСonjugationCurvesCommand() :
-			_singleObject(L"SingleObject", RSCADUIW("SingleObject")),
-			_layoutControl(L"Layout", RPLM::EP::Model::ObjectFilterPtr(), L"View"),
-			_singleObjectElement(L"SingleObjectElement", RSCADUIW("SingleObjectElement")),
+			_selectObjectControl(L"SelectObjectControl", RSCADUIW("Object")),
+			_layoutControl(L"Layout", EP::Model::ObjectFilterPtr(), L"View"),
 			_groupCurveParameters(RSCADUIW("GroupCurveParameters"), L"GroupCurveParameters"),
 			_editValueCurveDegree(L"EditValueCurveDegree", RSCADUIW("EditValueCurveDegree")),
 			_readFromFileControlPoints(L"ReadFromFileControlPoints", RSCADUIW("ReadFromFile"), L""),
@@ -34,17 +33,17 @@ namespace RPLM::CAD
 			_fixOrderFirstDeriv(L"FixOrderFirstDeriv", RSCADUIW("FixOrderFirstDeriv"), false, false, false),
 			_fixOrderLastDeriv(L"FixOrderLastDeriv", RSCADUIW("FixOrderLastDeriv"), false, false, false)
 		{
-			_filter = std::make_shared<DimensionSelectionFilter>();
-			_selected = std::make_shared<RPLM::EP::Model::SelectionContainer>(GetDocument().get());
-
 			_dialog.SetTitle(RSCADUIW("RPLM.CAD.UI.ConjugationCurves"));
 
-			_dialog.AddOption(_ok);
-			_dialog.AddOption(_cancel);	
+			AddOkToDialog(&_dialog);
+			AddCancelToDialog(&_dialog);
 
-			// Объект
-			//_singleObject.SetPlaceholderText(_STRING("ObjectText"));
-			//_dialog.AddControl(_singleObject);
+			// Контрол "Выбрать объект"
+			_selectObjectControl.SetPlaceholderText(RSCADUIW("SelectObject"));
+			_dialog.AddControl(_selectObjectControl);
+
+			_filter = std::make_shared<DimensionSelectionFilter>();
+			_selected = std::make_shared<EP::Model::SelectionContainer>(GetDocument().get());
 
 			//// Вид
 			//_layoutControl.AddValue(_STR(""));
@@ -85,12 +84,19 @@ namespace RPLM::CAD
 
 			_dialog.OnCloseEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnCloseDialog, this);
 			_ok.PressEvent = std::bind(&RPLMCADСonjugationCurvesCommand::onOK, this, std::placeholders::_1);
+			_selectObjectControl.ClearObjectEvent = std::bind(&RPLMCADСonjugationCurvesCommand::onClearSelectObjectControl, this, std::placeholders::_1);
+			_selectObjectControl.FocusSetEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFocusSelectObjectControl, this, std::placeholders::_1);
+
+			
+			
+			
+			
+			
+
 			//_buttonFixDerivatives.PressEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFixateDerivates, this, std::placeholders::_1);
-			//_singleObject.ClearObjectEvent = std::bind(&RPLMCADСonjugationCurvesCommand::onDischargeSingleObject, this, std::placeholders::_1);
 			//_singleObjectElement.ClearObjectEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnDischargeSingleObjectElement, this, std::placeholders::_1);
 			//_singleObjectElement.FocusSetEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFocusObjectElement, this, std::placeholders::_1);
-			//_singleObject.FocusSetEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFocusObject, this, std::placeholders::_1);
-			////_layoutControl.LayoutSelectedEvent = std::bind(&AddDimensionCommand::OnLayoutSelected, this, std::placeholders::_1);
+			//_layoutControl.LayoutSelectedEvent = std::bind(&AddDimensionCommand::OnLayoutSelected, this, std::placeholders::_1);
 		}
 
 		RPLMCADСonjugationCurvesCommand::~RPLMCADСonjugationCurvesCommand()
@@ -98,27 +104,34 @@ namespace RPLM::CAD
 
 		}
 
-		void RPLMCADСonjugationCurvesCommand::onDischargeSingleObject(RPLM::EP::UI::SingleObjectControl& iControl)
+		void RPLMCADСonjugationCurvesCommand::onClearSelectObjectControl(EP::UI::SingleObjectControl& iControl)
 		{
-			_singleObject.Clear();
-			RPLM::EP::Model::MarkContainer* container = GetMarkContainer();
+			_selectObjectControl.Clear();
+			EP::Model::MarkContainer* container = GetMarkContainer();
 			container->RemoveAll(true);
+
+			CheckOKButton();
 		}
 
-		void RPLMCADСonjugationCurvesCommand::OnFixateDerivates(RPLM::EP::UI::ButtonControl& iControl)
+		void RPLMCADСonjugationCurvesCommand::OnFixateDerivates(EP::UI::ButtonControl& iControl)
 		{
 			_groupOrderDerivs.SetHidden(!_groupOrderDerivs.IsHidden());
 		}
 
-		bool RPLMCADСonjugationCurvesCommand::Start(RPLM::EP::UI::StartCommandParameters& iParameters)
+		bool RPLMCADСonjugationCurvesCommand::Start(EP::UI::StartCommandParameters& iParameters)
 		{
 			if (!Command::Start(iParameters))
-				return false;			
-			auto document = GetDocument();
-			CreateCommandDialog(_dialog, GetMainWindow(), document);
+			{
+				return false;
+			}
+			
+			CreateCommandDialog(_dialog, GetMainWindow(), GetDocument());
 			_dialog.NeedToAdjust();
 			_dialog.Show();
-			return true;			
+
+			CheckOKButton();
+
+			return true;
 		}
 
 		void RPLMCADСonjugationCurvesCommand::Finish()
@@ -127,25 +140,23 @@ namespace RPLM::CAD
 			SetPrompt(GetView(), _STR(""));
 			EmptyDynamicGraphics(GetView());
 			Command::Finish();
-
-			RPLM::EP::Model::Session::GetSession()->GetExternal().DeleteUnusedData();
+			EP::Model::Session::GetSession()->GetExternal().DeleteUnusedData();
 		}
 
-		void RPLMCADСonjugationCurvesCommand::OnFocusObjectElement(RPLM::EP::UI::SingleObjectControl& iControl)
+		void RPLMCADСonjugationCurvesCommand::OnFocusObjectElement(EP::UI::SingleObjectControl& iControl)
 		{
-			_singleObjectElement.SetActive(true);
-			_singleObject.SetActive(false);
+			_selectObjectControl.SetActive(false);
 		}
 
-		void RPLMCADСonjugationCurvesCommand::OnFocusObject(EP::UI::SingleObjectControl& iControl)
+		void RPLMCADСonjugationCurvesCommand::OnFocusSelectObjectControl(EP::UI::SingleObjectControl& iControl)
 		{
-			_singleObjectElement.SetActive(false);
-			_singleObject.SetActive(true);
+			_selectObjectControl.SetActive(true);
 		}
 
 		void RPLMCADСonjugationCurvesCommand::OnDischargeSingleObjectElement(EP::UI::SingleObjectControl& iControl)
 		{
-			_singleObjectElement.Clear();
+			CheckOKButton();
+
 			EP::Model::MarkContainer* container = GetMarkContainer();
 			container->RemoveAll(true);
 		}
@@ -178,11 +189,11 @@ namespace RPLM::CAD
 			Terminate();
 		}
 
-		void RPLMCADСonjugationCurvesCommand::OnCancel(FinishCommandContext& context)
+		void RPLMCADСonjugationCurvesCommand::CheckOKButton()
 		{
-			Terminate();
+			SetOKEnabled(_selectObjectControl.HasObject());
 		}
-		
+
 		bool RPLMCADСonjugationCurvesCommand::OnCloseDialog()
 		{
 			Terminate();
@@ -223,11 +234,14 @@ namespace RPLM::CAD
 		RPLM::EP::Model::ObjectSelectionPtr RPLMCADСonjugationCurvesCommand::SelectObject(RPLM::EP::UI::SelectObjectParameters& iParameters)
 		{
 			auto selection = iParameters.Selection();
-			RPLM::EP::Model::ObjectPtr objModel = std::dynamic_pointer_cast<RPLM::EP::Model::Object>(selection->GetObject());
-			if (objModel != nullptr && _singleObjectElement.IsActive() == false)
-				_singleObject.SetObject(objModel);
-			else 
-				_singleObjectElement.SetObject(objModel);
+
+			if (auto objModel = std::dynamic_pointer_cast<RPLM::EP::Model::Object>(selection->GetObject()))
+			{
+				_selectObjectControl.SetObject(objModel);
+			}
+
+			CheckOKButton();
+
 			return selection;
 		}
 

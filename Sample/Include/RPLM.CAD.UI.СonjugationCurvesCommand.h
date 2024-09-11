@@ -10,23 +10,23 @@ namespace RPLM::CAD
 		class RPLMCADСonjugationCurvesCommand: public EP::UI::Command
 		{
 		public:
-			///<summary>Конструктор для создания и редактирования сопряжения кривых</summary>
+			/// <summary>Конструктор для создания и редактирования сопряжения кривых</summary>
 		 	RPLMCADСonjugationCurvesCommand();
 
-			///<summary>Деструктор</summary>
+			/// <summary>Деструктор</summary>
 			~RPLMCADСonjugationCurvesCommand();
 
-			///<summary>Запуск команды</summary>
+			/// <summary>Запуск команды</summary>
 			/// <param name="iParameters">Параметры запуска</param>
 			virtual bool Start(EP::UI::StartCommandParameters& iParameters) override;
 
-			///<summary>Завершение команды</summary>
+			/// <summary>Завершение команды</summary>
 			virtual void Finish() override;
 
-			///<summary>Идентификатор команды</summary>
+			/// <summary>Идентификатор команды</summary>
 			virtual std::string GetID() override { return "RPLM.CAD.UI.ConjugationCurves"; }
 
-			///<summary>Отработка выбора объекта</summary>
+			/// <summary>Отработка выбора объекта</summary>
 			/// <param name="iParameters">Информация о выбранных объектах</param>
 			/// <returns>Выбранный объект</param>
 			EP::Model::ObjectSelectionPtr SelectObject(EP::UI::SelectObjectParameters& iParameters) override;
@@ -36,32 +36,37 @@ namespace RPLM::CAD
 		private:
 			void onOK(EP::UI::ButtonControl& iControl);
 
-			virtual void OnCancel(FinishCommandContext& context) override;
+			/// Проверить доступна ли кнопка OK
+			void CheckOKButton();
 			
-			void onDischargeSingleObject(EP::UI::SingleObjectControl& iControl);
+			/// Обработчик очистки контрола выбора объекта
+			void onClearSelectObjectControl(EP::UI::SingleObjectControl& iControl);
+
+			void OnFocusSelectObjectControl(EP::UI::SingleObjectControl& iControl);
+
+
+
 
 			// Скрывает/показывает группу элементов фиксации порядка производных
 			void OnFixateDerivates(EP::UI::ButtonControl& iControl);
 			void OnDischargeSingleObjectElement(EP::UI::SingleObjectControl& iControl);
 			void OnFocusObjectElement(EP::UI::SingleObjectControl& iControl);
-			void OnFocusObject(EP::UI::SingleObjectControl& iControl);
+			
 			
 			/// Событие о закрытии диалога
 			bool OnCloseDialog();
 
-			/// <summary>Обработчик уведомления об изменении активного вида</summary>
-			///<param name="iPathToLayout"> Путь до выбранного активного вида </param>
+			/// Обработчик уведомления об изменении активного вида
 			void OnLayoutSelected(const EP::Model::ObjectVector& iPathToLayout);
 
-			///Получение диалога команды
-			///<returns>Диалог команды</returns>
+			/// Получение диалога команды
 			EP::UI::ControlLayout* GetDialog() override { return &_dialog; }
 
 			/// Диалоговое окно
 			EP::UI::ControlLayout _dialog;
 
-			/// Выбрать объект
-			EP::UI::SingleObjectControl _singleObject;
+			/// Контрол "Выбрать объект"
+			EP::UI::SingleObjectControl _selectObjectControl;
 			/// Выбрать вид
 			EP::UI::SelectLayoutControl _layoutControl;
 
@@ -80,8 +85,6 @@ namespace RPLM::CAD
 			EP::UI::ControlGroup _groupOrderDerivs;
 			EP::UI::EditControl _fixOrderFirstDeriv;
 			EP::UI::EditControl _fixOrderLastDeriv;
-
-			EP::UI::SingleObjectControl _singleObjectElement;
 			
 			EP::Model::SelectionFilterPtr _filter;
 			std::shared_ptr<EP::Model::SelectionContainer> _selected;

@@ -140,4 +140,10 @@
     <value>Сопряжение кривых</value>
     <comment>ID инструмента</comment>
   </data>
+  <data name="Object" xml:space="preserve">
+    <value>Объект</value>
+  </data>
+  <data name="SelectObject" xml:space="preserve">
+    <value>Выберите объект</value>
+  </data>
 </root>
