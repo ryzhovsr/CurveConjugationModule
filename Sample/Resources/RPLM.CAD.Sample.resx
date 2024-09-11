@@ -117,20 +117,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="RPLM.CAD.UI.View.Mode.Front" xml:space="preserve">
-    <value>Вид спереди</value>
-  </data>
-  <data name="RPLM.CAD.UI.View.Mode.Top" xml:space="preserve">
-    <value>Вид сверху</value>
-  </data>
   <data name="RPLM.CAD.UI.ConjugationCurves" xml:space="preserve">
     <value>Сопряжение кривых</value>
-  </data>
-  <data name="RPLM.CAD.UI.View.Mode.Left" xml:space="preserve">
-    <value>Вид слева</value>
-  </data>
-  <data name="View" xml:space="preserve">
-    <value>Вид</value>
   </data>
   <data name="CAD.Modeling.Optional" xml:space="preserve">
     <value>Опционально</value>

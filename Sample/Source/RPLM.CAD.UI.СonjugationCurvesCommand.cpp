@@ -24,7 +24,6 @@ namespace RPLM::CAD
 	{
 		RPLMCADСonjugationCurvesCommand::RPLMCADСonjugationCurvesCommand() :
 			_selectObjectControl(L"SelectObjectControl", RSCADUIW("Object")),
-			_layoutControl(L"Layout", EP::Model::ObjectFilterPtr(), L"View"),
 			_groupCurveParameters(RSCADUIW("GroupCurveParameters"), L"GroupCurveParameters"),
 			_editValueCurveDegree(L"EditValueCurveDegree", RSCADUIW("EditValueCurveDegree")),
 			_readFromFileControlPoints(L"ReadFromFileControlPoints", RSCADUIW("ReadFromFile"), L""),
@@ -44,13 +43,6 @@ namespace RPLM::CAD
 
 			_filter = std::make_shared<DimensionSelectionFilter>();
 			_selected = std::make_shared<EP::Model::SelectionContainer>(GetDocument().get());
-
-			//// Вид
-			//_layoutControl.AddValue(_STR(""));
-			//_layoutControl.AddValue(RSCADUIW("ValueVidUp"), _STRING("SelectWorkplane"));
-			//_layoutControl.AddValue(RSCADUIW("ValueVidLeft"), _STRING("SelectWorkplane"));
-			//_layoutControl.AddValue(RSCADUIW("ValueVidTop"), _STRING("SelectWorkplane"));
-			//_dialog.AddControl(_layoutControl);
 
 			//// Степень кривой
 			//_groupCurveParameters.AddControl(_editValueCurveDegree);

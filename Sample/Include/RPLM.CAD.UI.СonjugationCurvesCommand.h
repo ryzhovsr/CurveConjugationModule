@@ -67,8 +67,6 @@ namespace RPLM::CAD
 
 			/// Контрол "Выбрать объект"
 			EP::UI::SingleObjectControl _selectObjectControl;
-			/// Выбрать вид
-			EP::UI::SelectLayoutControl _layoutControl;
 
 			/// Группа параметров кривой
 			EP::UI::ControlGroup _groupCurveParameters;
