@@ -158,26 +158,37 @@ namespace RPLM::CAD
 			RGK::Context rgkContext;
 			EP::Model::Session::GetSession()->GetRGKSession().CreateMainContext(rgkContext);
 
-			auto controlPointsFile = _readFromFileControlPoints.GetFullName();
-			auto kntotsFile = _readFromFileKnots.GetFullName();
-			int degree = _editValueCurveDegree.GetIntValue();
-
-			if (controlPointsFile.empty() || kntotsFile.empty() || degree == 0)
+			if (_selectedCurve)
 			{
-				return;
+
+
+				//EP::Model::PathToObjectPtr path
+				//RGK::NURBSCurve origiganalCurve(_selectedCurve);
 			}
+			else
+			{
+				auto controlPointsFile = _readFromFileControlPoints.GetFullName();
+				auto kntotsFile = _readFromFileKnots.GetFullName();
+				int degree = _editValueCurveDegree.GetIntValue();
 
-			RGK::Vector<RGK::Math::Vector3D> controlPoints = Sample::Utils::readControlPointsFromFile(controlPointsFile);
-			Math::Geometry2D::Geometry::DoubleArray knots = Sample::Utils::readKnotsFromFile(kntotsFile);
+				if (controlPointsFile.empty() || kntotsFile.empty() || degree == 0)
+				{
+					return;
+				}
 
-			RGK::NURBSCurve origiganalCurve;
-			RGK::NURBSCurve::Create(rgkContext, controlPoints, degree, knots, false, origiganalCurve);
+				RGK::Vector<RGK::Math::Vector3D> controlPoints = Sample::Utils::readControlPointsFromFile(controlPointsFile);
+				Math::Geometry2D::Geometry::DoubleArray knots = Sample::Utils::readKnotsFromFile(kntotsFile);
 
-			// Выполнение сопряжения исходной кривой с фиксацией производных
-			RGK::NURBSCurve conjugatedCurve = ConjugateMethods::conjugateCurve(origiganalCurve, _fixOrderFirstDeriv.GetIntValue(), _fixOrderLastDeriv.GetIntValue());
+				RGK::NURBSCurve origiganalCurve;
+				RGK::NURBSCurve::Create(rgkContext, controlPoints, degree, knots, false, origiganalCurve);
 
-			// Записываем контрольные точки новой кривой в файл
-			Sample::Utils::writeControlPointsInFile(_STRING("C:\\Work\\rplm.all\\src\\SampleRPLM\\TempFile.txt"), conjugatedCurve.GetControlPoints());
+				// Выполнение сопряжения исходной кривой с фиксацией производных
+				RGK::NURBSCurve conjugatedCurve = ConjugateMethods::conjugateCurve(origiganalCurve, _fixOrderFirstDeriv.GetIntValue(), _fixOrderLastDeriv.GetIntValue());
+
+				// Записываем контрольные точки новой кривой в файл
+				Sample::Utils::writeControlPointsInFile(_STRING("C:\\Work\\rplm.all\\src\\SampleRPLM\\TempFile.txt"), conjugatedCurve.GetControlPoints());
+			}
+			
 			Terminate();
 		}
 
@@ -230,6 +241,7 @@ namespace RPLM::CAD
 			if (auto objModel = std::dynamic_pointer_cast<RPLM::EP::Model::Object>(selection->GetObject()))
 			{
 				_selectObjectControl.SetObject(objModel);
+				_selectedCurve = objModel;
 			}
 
 			CheckOKButton();

@@ -62,6 +62,8 @@ namespace RPLM::CAD
 			/// Получение диалога команды
 			EP::UI::ControlLayout* GetDialog() override { return &_dialog; }
 
+			EP::Model::ObjectPtr _selectedCurve;
+
 			/// Диалоговое окно
 			EP::UI::ControlLayout _dialog;
 
