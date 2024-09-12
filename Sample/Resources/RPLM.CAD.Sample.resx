@@ -134,4 +134,25 @@
   <data name="SelectObject" xml:space="preserve">
     <value>Выберите объект</value>
   </data>
+  <data name="ButtonControlFixDerivatives" xml:space="preserve">
+    <value>Зафиксировать производные</value>
+  </data>
+  <data name="EditControlCurveDegree" xml:space="preserve">
+    <value>Степень кривой</value>
+  </data>
+  <data name="GroupCurveParameters" xml:space="preserve">
+    <value>Параметры кривой</value>
+  </data>
+  <data name="ReadFromFileControlPoints" xml:space="preserve">
+    <value>Контрольные точки</value>
+  </data>
+  <data name="ReadFromFileKnots" xml:space="preserve">
+    <value>Узловой вектор</value>
+  </data>
+  <data name="FixOrderFirstDeriv" xml:space="preserve">
+    <value>Порядок первой производной</value>
+  </data>
+  <data name="FixOrderLastDeriv" xml:space="preserve">
+    <value>Порядок последней производной</value>
+  </data>
 </root>

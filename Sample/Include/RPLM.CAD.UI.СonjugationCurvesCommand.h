@@ -74,15 +74,15 @@ namespace RPLM::CAD
 			EP::UI::ControlGroup _groupCurveParameters;
 
 			/// Степень кривой
-			EP::UI::EditControl _editValueCurveDegree;
+			EP::UI::EditControl _editControlCurveDegree;
 
-			/// Чтение из файла
+			/// Котролы для чтения из файла
 			EP::UI::FileNameControl _readFromFileControlPoints;
 			EP::UI::FileNameControl _readFromFileKnots;
 
 			/// Кнопка и группа для фиксации производных
-			EP::UI::ButtonControl _buttonFixDerivatives;
-			EP::UI::ControlGroup _groupOrderDerivs;
+			EP::UI::ButtonControl _buttonControlFixDerivatives;
+			EP::UI::ControlGroup _groupFixOrderDerivs;
 			EP::UI::EditControl _fixOrderFirstDeriv;
 			EP::UI::EditControl _fixOrderLastDeriv;
 			

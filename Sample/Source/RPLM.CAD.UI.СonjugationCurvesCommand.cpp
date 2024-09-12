@@ -25,10 +25,10 @@ namespace RPLM::CAD
 		RPLMCADСonjugationCurvesCommand::RPLMCADСonjugationCurvesCommand() :
 			_selectObjectControl(L"SelectObjectControl", RSCADUIW("Object")),
 			_groupCurveParameters(RSCADUIW("GroupCurveParameters"), L"GroupCurveParameters"),
-			_editValueCurveDegree(L"EditValueCurveDegree", RSCADUIW("EditValueCurveDegree")),
-			_readFromFileControlPoints(L"ReadFromFileControlPoints", RSCADUIW("ReadFromFile"), L""),
-			_readFromFileKnots(L"ReadFromFileKnots", RSCADUIW("ReadFromFile"), _STR("")),
-			_buttonFixDerivatives(L"ButtonFixDerivatives", RSCADUIW("ButtonFixDerivatives"), L"", false, true),
+			_editControlCurveDegree(L"EditControlCurveDegree", RSCADUIW("EditControlCurveDegree")),
+			_readFromFileControlPoints(L"ReadFromFileControlPoints", RSCADUIW("ReadFromFileControlPoints"), L""),
+			_readFromFileKnots(L"ReadFromFileKnots", RSCADUIW("ReadFromFileKnots"), L""),
+			_buttonControlFixDerivatives(L"ButtonControlFixDerivatives", RSCADUIW("ButtonControlFixDerivatives"), L"", false, true),
 			_fixOrderFirstDeriv(L"FixOrderFirstDeriv", RSCADUIW("FixOrderFirstDeriv"), false, false, false),
 			_fixOrderLastDeriv(L"FixOrderLastDeriv", RSCADUIW("FixOrderLastDeriv"), false, false, false)
 		{
@@ -44,48 +44,42 @@ namespace RPLM::CAD
 			_filter = std::make_shared<DimensionSelectionFilter>();
 			_selected = std::make_shared<EP::Model::SelectionContainer>(GetDocument().get());
 
-			//// Степень кривой
-			//_groupCurveParameters.AddControl(_editValueCurveDegree);
+			// Степень кривой
+			_groupCurveParameters.AddControl(_editControlCurveDegree);
 
-			//// Контрольные точки
-			//_groupCurveParameters.AddControl(_readFromFileControlPoints);
-			//_readFromFileControlPoints.SetTitle(_STR("Контрольные точки"));
-			//_readFromFileControlPoints.SelectFile();
+			// Контрольные точки
+			_groupCurveParameters.AddControl(_readFromFileControlPoints);
+			_readFromFileControlPoints.SelectFile();
 
-			//// Узловой вектор
-			//_groupCurveParameters.AddControl(_readFromFileKnots);
-			//_readFromFileKnots.SetTitle(_STR("Узловой вектор"));
-			//_readFromFileKnots.SelectFile();
+			// Узловой вектор
+			_groupCurveParameters.AddControl(_readFromFileKnots);
+			_readFromFileKnots.SelectFile();
 
-			//_dialog.AddControl(_groupCurveParameters);
+			_dialog.AddControl(_groupCurveParameters);
 
-			//// Чекбокс фиксации производных
-			//_dialog.AddControl(_buttonFixDerivatives);
+			// Чекбокс фиксации производных
+			_dialog.AddControl(_buttonControlFixDerivatives);
 
-			//// Порядок первой производной
-			//_groupOrderDerivs.AddControl(_fixOrderFirstDeriv);
-			//// Порядок последней производной
-			//_groupOrderDerivs.AddControl(_fixOrderLastDeriv);
+			// Порядок первой производной
+			_groupFixOrderDerivs.AddControl(_fixOrderFirstDeriv);
+			// Порядок последней производной
+			_groupFixOrderDerivs.AddControl(_fixOrderLastDeriv);
 
-			//_groupOrderDerivs.SetHidden(true);
-			//_dialog.AddControl(_groupOrderDerivs);
-
-			///// Получить путь к виду, на котором выполняется команда
-			/////<returns>Путь (иерархия) видов, на котором выполняется команда</returns>
-			////RPLM::EP::Model::ObjectVector GetPathToLayout() { return _pathToLayout; }
+			_groupFixOrderDerivs.SetHidden(true);
+			_dialog.AddControl(_groupFixOrderDerivs);
 
 			_dialog.OnCloseEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnCloseDialog, this);
 			_ok.PressEvent = std::bind(&RPLMCADСonjugationCurvesCommand::onOK, this, std::placeholders::_1);
 			_selectObjectControl.ClearObjectEvent = std::bind(&RPLMCADСonjugationCurvesCommand::onClearSelectObjectControl, this, std::placeholders::_1);
 			_selectObjectControl.FocusSetEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFocusSelectObjectControl, this, std::placeholders::_1);
-
+			_buttonControlFixDerivatives.PressEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFixateDerivates, this, std::placeholders::_1);
 			
 			
 			
+			/// Получить путь к виду, на котором выполняется команда
+			///<returns>Путь (иерархия) видов, на котором выполняется команда</returns>
+			//RPLM::EP::Model::ObjectVector GetPathToLayout() { return _pathToLayout; }
 			
-			
-
-			//_buttonFixDerivatives.PressEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFixateDerivates, this, std::placeholders::_1);
 			//_singleObjectElement.ClearObjectEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnDischargeSingleObjectElement, this, std::placeholders::_1);
 			//_singleObjectElement.FocusSetEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFocusObjectElement, this, std::placeholders::_1);
 			//_layoutControl.LayoutSelectedEvent = std::bind(&AddDimensionCommand::OnLayoutSelected, this, std::placeholders::_1);
@@ -107,7 +101,7 @@ namespace RPLM::CAD
 
 		void RPLMCADСonjugationCurvesCommand::OnFixateDerivates(EP::UI::ButtonControl& iControl)
 		{
-			_groupOrderDerivs.SetHidden(!_groupOrderDerivs.IsHidden());
+			_groupFixOrderDerivs.SetHidden(!_groupFixOrderDerivs.IsHidden());
 		}
 
 		bool RPLMCADСonjugationCurvesCommand::Start(EP::UI::StartCommandParameters& iParameters)
@@ -160,8 +154,26 @@ namespace RPLM::CAD
 
 			if (_selectedCurve)
 			{
+				if (auto path = std::make_unique<EP::Model::PathToObject>(EP::Model::PathToObject(_selectedCurve)))
+				{
+					auto objSelection = EP::UI::Command::CreateObjectSelectionFromPath(*path);
 
+					if (auto parentObj = path->GetParentObject())
+					{
+						if (auto topologyObj = std::static_pointer_cast<RPLM::EP::Model::TopologyObject>(parentObj))
+						{
+							auto curve = dynamic_cast<EP::Model::CurveData*>(topologyObj.get());
+							auto o = curve->GetCurve();
+							auto link = topologyObj->GetLink();
 
+							// ERROP auto data = link->GetTopologyData();
+
+							// DO SOMETHING
+						}
+					}
+				}
+
+				
 				//EP::Model::PathToObjectPtr path
 				//RGK::NURBSCurve origiganalCurve(_selectedCurve);
 			}
@@ -169,7 +181,7 @@ namespace RPLM::CAD
 			{
 				auto controlPointsFile = _readFromFileControlPoints.GetFullName();
 				auto kntotsFile = _readFromFileKnots.GetFullName();
-				int degree = _editValueCurveDegree.GetIntValue();
+				int degree = _editControlCurveDegree.GetIntValue();
 
 				if (controlPointsFile.empty() || kntotsFile.empty() || degree == 0)
 				{
