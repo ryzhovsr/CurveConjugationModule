@@ -18,8 +18,13 @@ namespace RPLM::CAD::DimensionChain::UI
 		Session& operator=(Session&&) = delete;
 
 		static Session& Instance();
-		void Init();	// Инициализация
-		void Destroy(); // Завершение
+
+		// Инициализация
+		void Init();
+
+		// Завершение
+		void Destroy();
+
 		const RPLM::Base::Framework::String& GetModuleName();
 	};
 }

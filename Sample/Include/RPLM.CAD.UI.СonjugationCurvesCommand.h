@@ -44,11 +44,13 @@ namespace RPLM::CAD
 
 			void OnFocusSelectObjectControl(EP::UI::SingleObjectControl& iControl);
 
-
-
-
 			// Скрывает/показывает группу элементов фиксации порядка производных
 			void OnFixateDerivates(EP::UI::ButtonControl& iControl);
+
+
+
+
+
 			void OnDischargeSingleObjectElement(EP::UI::SingleObjectControl& iControl);
 			void OnFocusObjectElement(EP::UI::SingleObjectControl& iControl);
 			
