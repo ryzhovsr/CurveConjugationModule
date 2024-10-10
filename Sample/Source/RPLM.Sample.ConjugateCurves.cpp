@@ -3,7 +3,7 @@
 #include "RPLM.Sample.IMatrixOperations.h"
 #include "RPLM.Math.ConstraintSolver.EquationSolver/EquationsMatrix.h"
 
-namespace ConjugateMethods
+namespace Sample
 {
     // Пространсто со вспомогательным функциями для сопряжения кривой
     namespace ImplConjugateCurve
@@ -512,17 +512,16 @@ namespace ConjugateMethods
         }
     }
 
-    // Делает кривую непрерывной, соединяя её в точках разрывов
-    RGK::NURBSCurve conjugateCurve(const RGK::NURBSCurve& curve, int orderFixFirstDeriv, int orderFixLastDeriv)
+    RGK::NURBSCurve ConjugationMethods::conjugateCurve(const RGK::NURBSCurve& iCurve, int iOrderFixFirstDeriv, int iOrderFixLastDeriv)
     {
         // Разбиваем NURBS кривую на кривые Безье
-        RGK::Vector<RGK::NURBSCurve> bezierCurves = ImplConjugateCurve::splittingСurveIntoBezierCurves(curve);
+        RGK::Vector<RGK::NURBSCurve> bezierCurves = ImplConjugateCurve::splittingСurveIntoBezierCurves(iCurve);
 
         // Вычисляем базисные функции и их производные в параметре 1 (нулевая строка в basisFuncs - нулевые производные, первая строка в basisFuncs - первые произв. и т.д.)
         double curveParameter = 1;
         RGK::Vector<RGK::Vector<double>> basisFuncs = ImplConjugateCurve::calculateBasisFuncs(bezierCurves[0], curveParameter);
 
-        const size_t NUMBER_BASIS_FUNCS = static_cast<size_t>(curve.GetDegree()) + 1;                       // Количество базисных функций
+        const size_t NUMBER_BASIS_FUNCS = static_cast<size_t>(iCurve.GetDegree()) + 1;                      // Количество базисных функций
         const size_t NUMBER_BEZIER_CURVES = bezierCurves.size();                                            // Количество кривых Безье
         const size_t NUMBER_BREAK_POINTS = NUMBER_BEZIER_CURVES - 1;                                        // Количество потенциальных точек разрыва между кривыми
         const size_t NUMBER_EPSILONS = bezierCurves.size() * bezierCurves[0].GetControlPoints().size();     // Количество эпсилон, которые будут регулировать контрольные точки
@@ -535,7 +534,7 @@ namespace ConjugateMethods
         ImplConjugateCurve::fillCoefficientsMatrix(coefficientMatrix, basisFuncs, NUMBER_EPSILONS, NUMBER_BREAK_POINTS);
 
         // Фиксируем первую и последнюю точки у кривой и их первые производные
-        ImplConjugateCurve::fixPointsAtCurve(coefficientMatrix, NUMBER_EPSILONS, NUMBER_BASIS_FUNCS, orderFixFirstDeriv, orderFixLastDeriv);
+        ImplConjugateCurve::fixPointsAtCurve(coefficientMatrix, NUMBER_EPSILONS, NUMBER_BASIS_FUNCS, iOrderFixFirstDeriv, iOrderFixLastDeriv);
 
         // Контрольные точки кривых Безье
         RGK::Vector<RGK::Math::Vector3DArray> controlPointsBezierCurves(NUMBER_BEZIER_CURVES);

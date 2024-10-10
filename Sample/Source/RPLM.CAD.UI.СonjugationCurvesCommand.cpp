@@ -15,6 +15,7 @@
 #include <qdockwidget.h>
 #include <qwidget.h>
 #include <string>
+#include <RPLM.EP.Model/Model/Dependencies/RGPInterpolationSpline.h>
 
 #define RSCADUIW(key)	RPLM::Base::Framework::GetModuleResource(L##key, L"RPLM.CAD.Sample")
 
@@ -25,9 +26,9 @@ namespace RPLM::CAD
 		RPLMCADСonjugationCurvesCommand::RPLMCADСonjugationCurvesCommand() :
 			_selectObjectControl(L"SelectObjectControl", RSCADUIW("Object")),
 			_groupCurveParameters(RSCADUIW("GroupCurveParameters"), L"GroupCurveParameters"),
-			_editControlCurveDegree(L"EditControlCurveDegree", RSCADUIW("EditControlCurveDegree")),
-			_readFromFileControlPoints(L"ReadFromFileControlPoints", RSCADUIW("ReadFromFileControlPoints"), L""),
-			_readFromFileKnots(L"ReadFromFileKnots", RSCADUIW("ReadFromFileKnots"), L""),
+			_curveDegree(L"CurveDegree", RSCADUIW("CurveDegree")),
+			_controlPoints(L"ControlPoints", RSCADUIW("ControlPoints"), L""),
+			_knots(L"Knots", RSCADUIW("Knots"), L""),
 			_buttonControlFixDerivatives(L"ButtonControlFixDerivatives", RSCADUIW("ButtonControlFixDerivatives"), L"", false, true),
 			_fixOrderFirstDeriv(L"FixOrderFirstDeriv", RSCADUIW("FixOrderFirstDeriv"), false, false, false),
 			_fixOrderLastDeriv(L"FixOrderLastDeriv", RSCADUIW("FixOrderLastDeriv"), false, false, false)
@@ -45,15 +46,15 @@ namespace RPLM::CAD
 			_selected = std::make_shared<EP::Model::SelectionContainer>(GetDocument().get());
 
 			// Степень кривой
-			_groupCurveParameters.AddControl(_editControlCurveDegree);
+			_groupCurveParameters.AddControl(_curveDegree);
 
 			// Контрольные точки
-			_groupCurveParameters.AddControl(_readFromFileControlPoints);
-			_readFromFileControlPoints.SelectFile();
+			_groupCurveParameters.AddControl(_controlPoints);
+			_controlPoints.SelectFile();
 
 			// Узловой вектор
-			_groupCurveParameters.AddControl(_readFromFileKnots);
-			_readFromFileKnots.SelectFile();
+			_groupCurveParameters.AddControl(_knots);
+			_knots.SelectFile();
 
 			_dialog.AddControl(_groupCurveParameters);
 
@@ -73,9 +74,7 @@ namespace RPLM::CAD
 			_selectObjectControl.ClearObjectEvent = std::bind(&RPLMCADСonjugationCurvesCommand::onClearSelectObjectControl, this, std::placeholders::_1);
 			_selectObjectControl.FocusSetEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFocusSelectObjectControl, this, std::placeholders::_1);
 			_buttonControlFixDerivatives.PressEvent = std::bind(&RPLMCADСonjugationCurvesCommand::OnFixateDerivates, this, std::placeholders::_1);
-			
-			
-			
+
 			/// Получить путь к виду, на котором выполняется команда
 			///<returns>Путь (иерархия) видов, на котором выполняется команда</returns>
 			//RPLM::EP::Model::ObjectVector GetPathToLayout() { return _pathToLayout; }
@@ -149,53 +148,57 @@ namespace RPLM::CAD
 
 		void RPLMCADСonjugationCurvesCommand::onOK(EP::UI::ButtonControl& iControl)
 		{
-			RGK::Context rgkContext;
-			EP::Model::Session::GetSession()->GetRGKSession().CreateMainContext(rgkContext);
+			//bool typeSpline;
+			//auto curve = std::static_pointer_cast<EP::Model::Curve2D>(_selectedCurve);
+			//curve->GetCurveData().GetSplineInterpolationType(typeSpline);
 
-			if (_selectedCurve)
+			/*if (typeSpline && curve->GetDependencies())
 			{
-				if (auto path = std::make_unique<EP::Model::PathToObject>(EP::Model::PathToObject(_selectedCurve)))
-				{
-					auto objSelection = EP::UI::Command::CreateObjectSelectionFromPath(*path);
+				EP::DoubleArray knots;
 
-					if (auto parentObj = path->GetParentObject())
+				for (auto dep : curve->GetDependencies().Get())
+				{
+					auto interpolationDep = std::static_pointer_cast<RPLM::EP::Model::Curve>(dep);
+
+					if (interpolationDep == nullptr)
+						continue;
+
+					for (const auto knot : interpolationDep->GetKnots())
 					{
-						if (auto topologyObj = std::static_pointer_cast<RPLM::EP::Model::TopologyObject>(parentObj))
-						{
-							auto curve = dynamic_cast<EP::Model::CurveData*>(topologyObj.get());
-							auto o = curve->GetCurve();
-							auto link = topologyObj->GetLink();
-
-							// ERROP auto data = link->GetTopologyData();
-
-							// DO SOMETHING
-						}
+						knots.push_back(knot->GetValue());
 					}
+
+					RGK::NURBSCurve origiganalCurve;
+					RGK::Vector<RGK::Math::Vector3D> controlPoints{};
+					RGK::NURBSCurve::Create(rgkContext, controlPoints, 3, {}, false, origiganalCurve);
 				}
+			}*/
 
-				
-				//EP::Model::PathToObjectPtr path
-				//RGK::NURBSCurve origiganalCurve(_selectedCurve);
-			}
-			else
 			{
-				auto controlPointsFile = _readFromFileControlPoints.GetFullName();
-				auto kntotsFile = _readFromFileKnots.GetFullName();
-				int degree = _editControlCurveDegree.GetIntValue();
+				// Получаем введённые значения из контролов
+				Base::Framework::String controlPointsPath = _controlPoints.GetFullName();
+				Base::Framework::String knotsPath = _knots.GetFullName();
+				int degree = _curveDegree.GetIntValue();
 
-				if (controlPointsFile.empty() || kntotsFile.empty() || degree == 0)
+				if (controlPointsPath.empty() || knotsPath.empty() || degree <= 0)
 				{
+					Terminate();
 					return;
 				}
 
-				RGK::Vector<RGK::Math::Vector3D> controlPoints = Sample::Utils::readControlPointsFromFile(controlPointsFile);
-				Math::Geometry2D::Geometry::DoubleArray knots = Sample::Utils::readKnotsFromFile(kntotsFile);
+				// Считываем данные из файлов
+				RGK::Vector<RGK::Math::Vector3D> controlPoints = Sample::Utils::readControlPointsFromFile(controlPointsPath);
+				Math::Geometry2D::Geometry::DoubleArray knots = Sample::Utils::readKnotsFromFile(knotsPath);
 
+				RGK::Context rgkContext;
+				EP::Model::Session::GetSession()->GetRGKSession().CreateMainContext(rgkContext);
+
+				// Создаём объект исходной кривой
 				RGK::NURBSCurve origiganalCurve;
 				RGK::NURBSCurve::Create(rgkContext, controlPoints, degree, knots, false, origiganalCurve);
 
 				// Выполнение сопряжения исходной кривой с фиксацией производных
-				RGK::NURBSCurve conjugatedCurve = ConjugateMethods::conjugateCurve(origiganalCurve, _fixOrderFirstDeriv.GetIntValue(), _fixOrderLastDeriv.GetIntValue());
+				RGK::NURBSCurve conjugatedCurve = Sample::ConjugationMethods::conjugateCurve(origiganalCurve, _fixOrderFirstDeriv.GetIntValue(), _fixOrderLastDeriv.GetIntValue());
 
 				// Записываем контрольные точки новой кривой в файл
 				Sample::Utils::writeControlPointsInFile(_STRING("C:\\Work\\rplm.all\\src\\SampleRPLM\\TempFile.txt"), conjugatedCurve.GetControlPoints());
@@ -206,7 +209,7 @@ namespace RPLM::CAD
 
 		void RPLMCADСonjugationCurvesCommand::CheckOKButton()
 		{
-			SetOKEnabled(_selectObjectControl.HasObject());
+			//SetOKEnabled(_selectObjectControl.HasObject());
 		}
 
 		bool RPLMCADСonjugationCurvesCommand::OnCloseDialog()

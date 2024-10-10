@@ -5,12 +5,19 @@ namespace Sample
 {
 	namespace Utils
 	{
-		// Считывает контрольные точки из файла
-		RGK::Vector<RGK::Math::Vector3D> readControlPointsFromFile(const RPLM::Base::Framework::String& filePath);
+		/// <summary>Считывает контрольные точки из файла </summary>
+		/// <param name="iFilePath">Путь к файлу</param>
+		/// <returns>Контрольные точки</returns>
+		RGK::Vector<RGK::Math::Vector3D> readControlPointsFromFile(const RPLM::Base::Framework::String& iFilePath);
 
-		RPLM::Math::Geometry2D::Geometry::DoubleArray readKnotsFromFile(const RPLM::Base::Framework::String& filePath);
+		/// <summary>Считывает узлы из файла</summary>
+		/// <param name="iFilePath">Путь к файлу</param>
+		/// <returns>Вектор узлов</returns>
+		RPLM::Math::Geometry2D::Geometry::DoubleArray readKnotsFromFile(const RPLM::Base::Framework::String& iFilePath);
 
-        // Запись контрольных точек кривой в файл
-        void writeControlPointsInFile(const RPLM::Base::Framework::String& fileName, const RGK::Vector<RGK::Math::Vector3D>& controlPoints);
+        /// <summary> </summary>
+        /// <param name="iFilePath">Путь к файлу</param>
+        /// <param name="iControlPoints">Контрольные точки кривой</param>
+        void writeControlPointsInFile(const RPLM::Base::Framework::String& iFilePath, const RGK::Vector<RGK::Math::Vector3D>& iControlPoints);
 	}
 }

@@ -2,8 +2,15 @@
 
 #include <Geometry/Curves/NURBSCurve.h>
 
-namespace ConjugateMethods
+namespace Sample
 {
-	// Сопряжение кривой - выполнение полной непрерывности
-	RGK::NURBSCurve conjugateCurve(const RGK::NURBSCurve& curve, int orderFixFirstDeriv, int orderFixLastDeriv);
+	namespace ConjugationMethods
+	{
+		/// <summary>Сопряжение кривой с дополнительными ограничениями в первой и в конечной производной</summary>
+		/// <param name="iCurve"></param>
+		/// <param name="iOrderFixFirstDeriv">Порядок первой производной</param>
+		/// <param name="iOrderFixLastDeriv">Порядок конечной производной</param>
+		/// <returns>Сопряжённая кривая</returns>
+		RGK::NURBSCurve conjugateCurve(const RGK::NURBSCurve& iCurve, int iOrderFixFirstDeriv, int iOrderFixLastDeriv);
+	}
 }
