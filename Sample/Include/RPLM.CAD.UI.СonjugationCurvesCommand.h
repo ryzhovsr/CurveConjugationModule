@@ -47,7 +47,7 @@ namespace RPLM::CAD
 			// Скрывает/показывает группу элементов фиксации порядка производных
 			void OnFixateDerivates(EP::UI::ButtonControl& iControl);
 
-
+			void drawCurve(const RGK::NURBSCurve& iNurbs) const;
 
 
 
@@ -81,6 +81,10 @@ namespace RPLM::CAD
 			/// Котролы для чтения из файла
 			EP::UI::FileNameControl _controlPoints;
 			EP::UI::FileNameControl _knots;
+
+			// Контрол фиксации начала и конца кривой
+			EP::UI::ButtonControl _fixBeginningCurve;
+			EP::UI::ButtonControl _fixEndCurve;
 
 			/// Кнопка и группа для фиксации производных
 			EP::UI::ButtonControl _buttonControlFixDerivatives;

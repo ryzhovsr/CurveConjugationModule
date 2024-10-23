@@ -16,6 +16,10 @@
 #include <qwidget.h>
 #include <string>
 #include <RPLM.EP.Model/Model/Dependencies/RGPInterpolationSpline.h>
+#include "Generators/BodyConstructor.h"
+#include "Model/Representations/RGPModelScene.h"
+#include "RPLM.EP.Model/Model/Representations/RGPPresentationContexts.h"
+#include "Model/Objects/RGPBodyObject.h"
 
 #define RSCADUIW(key)	RPLM::Base::Framework::GetModuleResource(L##key, L"RPLM.CAD.Sample")
 
@@ -30,6 +34,8 @@ namespace RPLM::CAD
 			_controlPoints(L"ControlPoints", RSCADUIW("ControlPoints"), L""),
 			_knots(L"Knots", RSCADUIW("Knots"), L""),
 			_buttonControlFixDerivatives(L"ButtonControlFixDerivatives", RSCADUIW("ButtonControlFixDerivatives"), L"", false, true),
+			_fixBeginningCurve(L"FixBeginningCurve", RSCADUIW("FixBeginningCurve"), L"", false, true),
+			_fixEndCurve(L"FixEndCurve", RSCADUIW("FixEndCurve"), L"", false, true),
 			_fixOrderFirstDeriv(L"FixOrderFirstDeriv", RSCADUIW("FixOrderFirstDeriv"), false, false, false),
 			_fixOrderLastDeriv(L"FixOrderLastDeriv", RSCADUIW("FixOrderLastDeriv"), false, false, false)
 		{
@@ -40,26 +46,40 @@ namespace RPLM::CAD
 
 			// Контрол "Выбрать объект"
 			_selectObjectControl.SetPlaceholderText(RSCADUIW("SelectObject"));
-			_dialog.AddControl(_selectObjectControl);
+			//_dialog.AddControl(_selectObjectControl);
 
 			_filter = std::make_shared<DimensionSelectionFilter>();
 			_selected = std::make_shared<EP::Model::SelectionContainer>(GetDocument().get());
 
+			//// Степень кривой
+			//_groupCurveParameters.AddControl(_curveDegree);
+
+			//// Контрольные точки
+			//_groupCurveParameters.AddControl(_controlPoints);
+			//_controlPoints.SelectFile();
+
+			//// Узловой вектор
+			//_groupCurveParameters.AddControl(_knots);
+			//_knots.SelectFile();
+
 			// Степень кривой
-			_groupCurveParameters.AddControl(_curveDegree);
+			_dialog.AddControl(_curveDegree);
 
 			// Контрольные точки
-			_groupCurveParameters.AddControl(_controlPoints);
+			_dialog.AddControl(_controlPoints);
 			_controlPoints.SelectFile();
 
 			// Узловой вектор
-			_groupCurveParameters.AddControl(_knots);
+			_dialog.AddControl(_knots);
 			_knots.SelectFile();
 
-			_dialog.AddControl(_groupCurveParameters);
+			_dialog.AddControl(_fixBeginningCurve);
+			_dialog.AddControl(_fixEndCurve);
+
+			//_dialog.AddControl(_groupCurveParameters);
 
 			// Чекбокс фиксации производных
-			_dialog.AddControl(_buttonControlFixDerivatives);
+			//_dialog.AddControl(_buttonControlFixDerivatives);
 
 			// Порядок первой производной
 			_groupFixOrderDerivs.AddControl(_fixOrderFirstDeriv);
@@ -100,7 +120,63 @@ namespace RPLM::CAD
 
 		void RPLMCADСonjugationCurvesCommand::OnFixateDerivates(EP::UI::ButtonControl& iControl)
 		{
-			_groupFixOrderDerivs.SetHidden(!_groupFixOrderDerivs.IsHidden());
+			//_groupFixOrderDerivs.SetHidden(!_groupFixOrderDerivs.IsHidden());
+		}
+
+		void RPLMCADСonjugationCurvesCommand::drawCurve(const RGK::NURBSCurve& iNurbs) const
+		{
+			RGK::Context context;
+			RPLM::EP::Model::Session::GetSession()->GetRGKSession().CreateMainContext(context);
+
+			RGK::BodyConstructor::Data data(0, RGK::Body::Type::Wire);
+			data.CreateCoEdgeParametricCurvesAutomatically(true);
+
+			RGK::Math::Vector3DArray points = iNurbs.GetControlPoints();
+			std::vector<double> weights = iNurbs.GetWeights();
+			int degree = iNurbs.GetDegree();
+			std::vector<double> knots = iNurbs.GetKnots();
+			bool isPeriodic = false;
+
+			auto tolerance = context.GetLinearPrecision();
+			data.AddVertex(points.front(), tolerance);
+			data.AddVertex(points.back(), tolerance);
+
+			int ends[2] = { 0, 1 };
+			double interval[2] = { knots.front(), knots.back() };
+			data.AddEdge(ends, iNurbs, true, interval, tolerance);
+
+			RGK::BodyConstructor::Report report;
+			if (RGK::BodyConstructor::Create(context, data, report) != RGK::Success)
+				return;
+
+			RPLM::EP::Model::ModelScenePtr modelScene = nullptr;
+
+			for (auto i = 0; i < GetDocument()->Representations().Size(); ++i)
+			{
+				auto presentation = GetDocument()->Representations()[i];
+				if (!presentation)
+					continue;
+
+				if (presentation->IsTypeOf(RPLM::EP::Model::ModelScene::ClassID()))
+				{
+					modelScene = std::dynamic_pointer_cast<RPLM::EP::Model::ModelScene>(presentation);
+					break;
+				}
+			}
+
+			RPLM::EP::Model::EditDocument edit(GetDocument(), _STR("BodyCreating"));
+			{
+				auto bodyObject = std::make_shared<RPLM::EP::Model::BodyObject>((report.GetBody()));
+				GetDocument()->Objects().AddObject(bodyObject);
+				modelScene->EditReferences()->AddObject(bodyObject);
+
+				RGK::Context rgkContext;
+				RPLM::EP::Model::Session::GetSession()->GetRGKSession().CreateMainContext(rgkContext);
+				RPLM::EP::Model::Regeneration::RegenerationContext regenerationContext(GetDocument(), &rgkContext);
+				modelScene->Update(RPLM::EP::Model::PresentationUpdateContext(&regenerationContext));
+			}
+
+			edit.End(false);
 		}
 
 		bool RPLMCADСonjugationCurvesCommand::Start(EP::UI::StartCommandParameters& iParameters)
@@ -195,13 +271,19 @@ namespace RPLM::CAD
 
 				// Создаём объект исходной кривой
 				RGK::NURBSCurve origiganalCurve;
-				RGK::NURBSCurve::Create(rgkContext, controlPoints, degree, knots, false, origiganalCurve);
+				bool isPeriodic = false;
+				RGK::NURBSCurve::Create(rgkContext, controlPoints, degree, knots, isPeriodic, origiganalCurve);
+
+				bool isFixateBeginningCurve = _fixBeginningCurve.IsChecked();
+				bool isFixateEndCurve = _fixEndCurve.IsChecked();
 
 				// Выполнение сопряжения исходной кривой с фиксацией производных
-				RGK::NURBSCurve conjugatedCurve = Sample::ConjugationMethods::conjugateCurve(origiganalCurve, _fixOrderFirstDeriv.GetIntValue(), _fixOrderLastDeriv.GetIntValue());
+				RGK::NURBSCurve conjugatedCurve = Sample::ConjugationMethods::conjugateCurve(origiganalCurve, isFixateBeginningCurve, isFixateEndCurve);
 
 				// Записываем контрольные точки новой кривой в файл
 				Sample::Utils::writeControlPointsInFile(_STRING("C:\\Work\\rplm.all\\src\\SampleRPLM\\TempFile.txt"), conjugatedCurve.GetControlPoints());
+
+				drawCurve(conjugatedCurve);
 			}
 			
 			Terminate();

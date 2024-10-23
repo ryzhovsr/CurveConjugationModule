@@ -155,4 +155,10 @@
   <data name="FixOrderLastDeriv" xml:space="preserve">
     <value>Порядок последней производной</value>
   </data>
+  <data name="FixBeginningCurve" xml:space="preserve">
+    <value>Зафиксировать начало кривой</value>
+  </data>
+  <data name="FixEndCurve" xml:space="preserve">
+    <value>Зафиксировать конец кривой</value>
+  </data>
 </root>

@@ -328,31 +328,47 @@ namespace Sample
         }
 
         // Фиксирует первую и последнюю точки кривой и их первые производные (зануление определенных столбцов и строк у матрицы коэффициентов). По умолчанию фиксируются все 4 точки
-        static void fixPointsAtCurve(RGK::Vector<RGK::Vector<double>>& coefficientMatrix, size_t numberEpsilons, size_t numberBasisFuncs, int orderFixFirstDeriv, int orderFixLastDeriv)
+        static void fixPointsAtCurve(RGK::Vector<RGK::Vector<double>>& coefficientMatrix, size_t numberEpsilons, size_t numberBasisFuncs, bool fixBeginningCurve, bool fixEndCurve)
         {
-            // Фиксация первой граничной точки кривой
-            while (orderFixFirstDeriv >= 0)
-            {
-                for (size_t row = numberEpsilons; row != numberEpsilons + numberBasisFuncs; ++row)
-                {
-                    coefficientMatrix[orderFixFirstDeriv][row] = 0;
-                }
+            int orderFixFirstDeriv = 1;
+            int orderFixLastDeriv = 1;
 
-                --orderFixFirstDeriv;
+            if (fixBeginningCurve)
+            {
+                // Фиксация первой граничной точки кривой
+                while (orderFixFirstDeriv >= 0)
+                {
+                    for (size_t row = numberEpsilons; row != numberEpsilons + numberBasisFuncs; ++row)
+                    {
+                        coefficientMatrix[orderFixFirstDeriv][row] = 0;
+                    }
+
+                    --orderFixFirstDeriv;
+                }
             }
 
-            int tempCounter = 1;
-
-            while (orderFixLastDeriv >= 0)
+            if (fixEndCurve)
             {
-                for (size_t col = numberEpsilons; col != numberEpsilons + numberBasisFuncs; ++col)
+                for (size_t col = numberEpsilons + numberBasisFuncs; col != coefficientMatrix.size(); ++col)
                 {
-                    coefficientMatrix[numberEpsilons - tempCounter][col] = 0;
+                    coefficientMatrix[numberEpsilons - 1][col] = 0;
                 }
-
-                ++tempCounter;
-                --orderFixLastDeriv;
             }
+
+
+            // Не работает для 1 порядка производной
+            //int tempCounter = 1;
+
+            //while (orderFixLastDeriv >= 0)
+            //{
+            //    for (size_t col = numberEpsilons; col != numberEpsilons + numberBasisFuncs; ++col)
+            //    {
+            //        coefficientMatrix[numberEpsilons - tempCounter][col] = 0;
+            //    }
+
+            //    ++tempCounter;
+            //    --orderFixLastDeriv;
+            //}
         }
 
         // Заполняет матрицу свободных членов
@@ -512,7 +528,7 @@ namespace Sample
         }
     }
 
-    RGK::NURBSCurve ConjugationMethods::conjugateCurve(const RGK::NURBSCurve& iCurve, int iOrderFixFirstDeriv, int iOrderFixLastDeriv)
+    RGK::NURBSCurve ConjugationMethods::conjugateCurve(const RGK::NURBSCurve& iCurve, bool fixBeginningCurve = false, bool fixEndCurve = false)
     {
         // Разбиваем NURBS кривую на кривые Безье
         RGK::Vector<RGK::NURBSCurve> bezierCurves = ImplConjugateCurve::splittingСurveIntoBezierCurves(iCurve);
@@ -534,7 +550,7 @@ namespace Sample
         ImplConjugateCurve::fillCoefficientsMatrix(coefficientMatrix, basisFuncs, NUMBER_EPSILONS, NUMBER_BREAK_POINTS);
 
         // Фиксируем первую и последнюю точки у кривой и их первые производные
-        ImplConjugateCurve::fixPointsAtCurve(coefficientMatrix, NUMBER_EPSILONS, NUMBER_BASIS_FUNCS, iOrderFixFirstDeriv, iOrderFixLastDeriv);
+        ImplConjugateCurve::fixPointsAtCurve(coefficientMatrix, NUMBER_EPSILONS, NUMBER_BASIS_FUNCS, fixBeginningCurve, fixEndCurve);
 
         // Контрольные точки кривых Безье
         RGK::Vector<RGK::Math::Vector3DArray> controlPointsBezierCurves(NUMBER_BEZIER_CURVES);

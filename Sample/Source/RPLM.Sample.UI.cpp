@@ -23,6 +23,7 @@
 #endif
 #endif
 
+#define RSCADUIW(key)	RPLM::Base::Framework::GetModuleResource(L##key, L"RPLM.CAD.Sample")
 #define RPLM_ACTIVE_MAIN_WIDGET (RPLM::UI::Widgets::MainWindow::Cast(RPLM::Shell::UI::MainWindowManager::Instance().GetActiveMainWindow()))
 
 namespace RPLM::Shell::UI
@@ -83,7 +84,7 @@ namespace RPLM::Shell::UI
 					if (!category->GetGroup(groupID))
 					{
 						// Добавляем группу в категорию
-						auto* group = category->AddGroup(groupID, _STRING("CAD.Modeling.Optional"));
+						auto* group = category->AddGroup(groupID, RSCADUIW("CAD.Modeling.Optional"));
 
 						// Если в группе нет команды
 						if (group && !group->GetItem(toolID, false))
