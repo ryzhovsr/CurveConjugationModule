@@ -1,7 +1,7 @@
 #include "RPLM.Sample.EigenMatrixOperations.h"
 
 // В ручную привязываю библиотеку Eigen. Изменить если узнать как сделать динамический путь
-#include "C:\Work\rplm.all\src\RPLM.CAE\CAE.Tools\Include\Eigen\Dense"
+#include "Eigen\Dense"
 
 using namespace Eigen;
 
